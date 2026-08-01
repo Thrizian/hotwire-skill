@@ -3,11 +3,26 @@
 Expert guidance for building Rails apps with [Hotwire](https://hotwired.dev):
 Turbo Drive, Turbo Frames, Turbo Streams and Stimulus.
 
-The skill exists because the common Hotwire failure isn't wrong code — it's
-reaching for a heavier tool than the problem needs. A Stimulus controller that
-fetches JSON and builds DOM, where a Turbo Frame would have done it in two lines
-of HTML. So the core of this skill is a ladder, and the discipline of taking the
-lowest rung that works.
+## Why this exists
+
+Coding agents reach for JavaScript. Ask for a filtered list and you get a fetch
+call, a JSON endpoint and a template string; ask for an inline edit and you get a
+controller that hides one div and shows another. It is all competent code, and it
+is all a second copy of your rendering layer written in the wrong language — the
+exact thing Hotwire exists to delete.
+
+The pull is structural, not accidental: the training data is overwhelmingly
+client-rendered, so "add interactivity" resolves to "write JavaScript" long before
+anyone considers that the server could have sent the HTML. Hotwire is a small DSL
+with strong opinions, and an agent that doesn't know those opinions will route
+around them while producing something that works.
+
+So this skill is mostly a ladder — plain HTML, Drive, Frame, Stream, Stimulus —
+and the discipline of taking the lowest rung that solves the problem, with the
+boundaries between the rungs written down and sourced. Stimulus is the top rung,
+not the default one. It attaches behavior to server-rendered HTML; it is not a
+rendering layer, and a controller that turns JSON into DOM is the failure this
+skill is built to catch.
 
 ## Install
 

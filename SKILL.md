@@ -10,11 +10,16 @@ The client's job shrinks to swapping it in. That is why Hotwire apps stay small 
 there is no second copy of the domain model living in JavaScript, no serializer
 layer, no client router, no cache invalidation problem in two places.
 
-The main failure mode when working with Hotwire is not writing wrong code — it is
-reaching for a heavier tool than the problem needs. Someone writes a Stimulus
-controller that fetches JSON and builds DOM, when a Turbo Frame would have done
-it in two lines of HTML. Most of the value you add here is pushing work *down*
-this ladder.
+The failure mode to watch for in yourself is not writing wrong code — it is
+reaching for JavaScript. "Make this list filter" resolves to a fetch call, a JSON
+endpoint and a template string, when a Turbo Frame around a GET form would have
+done it in two lines of HTML and no JavaScript at all. That pull is strong and it
+is mostly a habit picked up from client-rendered codebases; in a Hotwire app it
+produces a second rendering layer that then has to be kept in sync with the first.
+
+So the value you add here is almost always pushing work *down* the ladder below,
+and Stimulus — the top rung — is the one to justify hardest, not the one to reach
+for first.
 
 ## Answer with the change, not a lecture
 
@@ -279,20 +284,30 @@ choose. Show the smaller version rather than arguing about it in the abstract.
 
 ## Debugging
 
-Hotwire failures are quiet by design — a frame that can't find its match, a stream
-targeting a missing id, a controller whose identifier doesn't match the filename.
-Nothing throws; the page just sits there. When something "doesn't work", read
-`references/debugging.md` and work the decision tree rather than guessing. It
-covers frame-missing, streams that arrive but don't apply, double-firing event
-listeners after Turbo cache restores, controllers that never connect, and
-morphing that eats client state.
+Much of Hotwire fails quietly — a stream targeting an id that isn't there, a
+controller whose identifier doesn't match its filename, an action bound to a
+method that doesn't exist. Nothing throws; the page just sits there.
 
-## Turbo 8 morphing — worth knowing before you reach for streams
+But **not everything is silent, and the difference is the diagnosis.** A real
+frame-missing is loud: Turbo paints `Content missing` into the frame and throws
+`TurboFrameMissingError`. So "clicking did nothing and the console is clean"
+*rules out* the most-cited frame explanation instead of confirming it — look for a
+request that never fired. Verify against the bundled Turbo before leaning on any
+of this; it is one grep, and reasoning from what a framework "generally does" is
+how you end up confidently diagnosing the wrong thing.
 
-Turbo 8 can refresh the current page and morph only the changed DOM nodes,
-preserving scroll and focus. That collapses a whole class of problems that used to
-need hand-written streams: after any change, broadcast a refresh and let every
-client re-render itself from the truth.
+When something doesn't work, work the trees in `references/debugging.md` rather
+than guessing: frame-missing, streams that arrive but don't apply, listeners that
+double-fire after a cache restore, controllers that never connect, morphing that
+eats client state.
+
+## Turbo 8 morphing — know it before you hand-write streams
+
+A page refresh can morph only the changed nodes instead of replacing `<body>`,
+preserving scroll and focus. That collapses a class of problems that used to need
+hand-maintained stream targets: after any change, broadcast a refresh and let each
+client re-render from the truth — which also solves markup that differs per
+viewer, since every client renders its own request.
 
 ```ruby
 class Post < ApplicationRecord
@@ -301,17 +316,16 @@ end
 ```
 
 ```erb
-<%# in the layout or view %>
 <meta name="turbo-refresh-method" content="morph">
 <meta name="turbo-refresh-scroll" content="preserve">
 <%= turbo_stream_from @post %>
 ```
 
-Trade-off to state honestly: morphing re-renders the whole page server-side, so
-it's more server work per update than a targeted stream, and it can disturb
-un-marked client state (mark it `data-turbo-permanent`). Prefer it when the update
-touches many parts of the page or when hand-maintaining stream targets is getting
-fiddly; prefer targeted streams for high-frequency updates to one small region.
+Costs a full server render per client per change, and disturbs client state you
+haven't marked `data-turbo-permanent`. So: morph when the change touches many
+parts of the page or per-viewer markup makes one broadcast payload impossible;
+targeted streams when updates are frequent and hit one small region.
+`references/choosing.md` has the rest of that call.
 
 ## Testing
 
@@ -330,7 +344,8 @@ expect(response.body).to include "turbo-stream action=\"append\" target=\"commen
 
 ## Reference files
 
-Read the one that matches what you're doing; don't read all four.
+Read the one that matches what you're doing. Reading all six is a waste of the
+context this split exists to protect.
 
 - `references/choosing.md` — the boundaries between Drive/Frame/Stream/Stimulus,
   plus where Hotwire hands off to the platform, to Action Cable, and to a real
