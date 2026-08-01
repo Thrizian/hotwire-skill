@@ -1,4 +1,4 @@
-# hotwire — a Claude Code skill
+# hotwire 
 
 Expert guidance for building Rails apps with [Hotwire](https://hotwired.dev):
 Turbo Drive, Turbo Frames, Turbo Streams and Stimulus.
