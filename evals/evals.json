@@ -1,0 +1,26 @@
+{
+  "skill_name": "hotwire",
+  "evals": [
+    {
+      "id": 0,
+      "name": "build-comments-partial-update",
+      "prompt": "Rails 8 app, blog. On the post show page there's a comment form at the bottom and a list of comments above it, plus a heading that says \"12 comments\". Right now submitting the form does a full page reload and jumps you back to the top, which is annoying because people comment while reading. I want the new comment to just appear in the list and the count to tick up, and the form to clear. Also if the comment is blank it should show the validation error without losing the page. Post has_many :comments, comment has body:text and belongs_to :user. Write me the controller, views and whatever else this needs.",
+      "expected_output": "Turbo Stream response (append comment + update count + replace/reset form), format.html fallback preserved, 422 :unprocessable_entity on validation failure, shared _comment partial with dom_id, no custom JS/fetch, templates written in the host project's template language (HAML here, not ERB)",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "debug-silent-frame",
+      "prompt": "Losing my mind here. I have an inline-edit thing on our admin user list — each row is a turbo frame, click Edit, form shows up in the row, save, row goes back to display mode. Works perfectly on my machine all day. But testers keep reporting that after they've had the tab open a while, clicking Edit just does nothing at all. No error, no spinner, nothing in the console that I can see, the row just sits there. If they hard-refresh the page it works again for a while. What is going on and how do I fix it?",
+      "expected_output": "Diagnoses session timeout -> redirect to sign-in page which lacks the frame id -> turbo:frame-missing silently swallowed. Fix via turbo-visit-control reload meta on login page and/or turbo:frame-missing handler. Should ask for/point at network tab evidence rather than guessing wildly.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "review-json-fetch-controller",
+      "prompt": "Can you review this before I merge it? It's a live-filtering product list. I'm considering pulling in React for this bit honestly because the Stimulus is getting hairy.\n\n// app/javascript/controllers/product_filter_controller.js\nimport { Controller } from \"@hotwired/stimulus\"\n\nexport default class extends Controller {\n  static targets = [\"input\", \"list\", \"count\"]\n\n  connect() {\n    document.addEventListener(\"keyup\", this.handleKey.bind(this))\n    this.fetchProducts()\n  }\n\n  handleKey(e) { if (e.key === \"Escape\") this.inputTarget.value = \"\" }\n\n  async fetchProducts() {\n    const q = document.querySelector(\"#product-search\").value\n    const res = await fetch(`/products.json?q=${q}`)\n    const products = await res.json()\n    this.listTarget.innerHTML = products.map(p => `\n      <div class=\"product\">\n        <h3>${p.name}</h3>\n        <span>$${p.price}</span>\n        <a href=\"/products/${p.id}\">View</a>\n      </div>\n    `).join(\"\")\n    this.countTarget.innerHTML = products.length + \" products\"\n  }\n}\n\n// app/controllers/products_controller.rb\ndef index\n  @products = Product.where(\"name ILIKE ?\", \"%#{params[:q]}%\")\n  render json: @products\nend",
+      "expected_output": "Rewrites as server-rendered turbo frame with data-turbo-frame on a GET form (or debounced form submit), reusing a _product partial. Flags: XSS via innerHTML interpolation, leaked keyup listener with no disconnect, document.querySelector instead of target, no debounce, index only renders JSON (no HTML path), duplicated markup between server and JS. Pushes back on React with a concrete smaller version.",
+      "files": []
+    }
+  ]
+}
